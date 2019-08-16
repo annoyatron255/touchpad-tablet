@@ -67,6 +67,10 @@ int handle_event(Display *dpy, Window target_window, const struct input_event *e
 					x = abs_x;
 					y = abs_y;
 					break;
+				default:
+					fprintf(stderr, "ERROR: Invalid scaling mode: %d\n",
+					        scaling_mode);
+					exit(1);
 			}
 
 			XWarpPointer(dpy, None, target_window, 0, 0, 0, 0, x, y);
@@ -100,7 +104,7 @@ int main (int argc, char **argv) {
 	int click_threshold = 50;
 	int release_threshold = 20;
 	int movement_threshold = 0;
-	static int scaling_mode = FULL;
+	static int scaling_mode = ASPECT_FILL_X;
 	Window target_window = 0;
 
 	while (1) {
@@ -114,12 +118,13 @@ int main (int argc, char **argv) {
 			{"release-threshold", required_argument, 0, 'r'},
 			{"movement-threshold", required_argument, 0, 'm'},
 			{"window", required_argument, 0, 'w'},
+			{"help", no_argument, 0, 'h'},
 			{0, 0, 0, 0}
 		};
 
 		int option_index = 0;
 
-		int c = getopt_long(argc, argv, "c:r:m:w:", long_options, &option_index);
+		int c = getopt_long(argc, argv, "c:r:m:w:h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -138,6 +143,32 @@ int main (int argc, char **argv) {
 			case 'w':
 				target_window = atoi(optarg);
 				break;
+			case 'h':
+				printf("Usage: touchpad-tablet [OPTION] [DEVICE]\n"
+				       "Use touchpad as psuedo-tablet on a window.\n"
+				       "\n"
+				       "Mandatory arguments to long options are mandatory for short options too.\n"
+				       "      --debug                       print debugging messages\n"
+				       "      --scale-full                  set scaling to stretch to fill on\n"
+				       "                                      both x and y axises\n"
+				       "      --scale-aspect-fill-x         set scaling to stretch to fill on\n"
+				       "                                      x axis and to maintain aspect ratio\n"
+				       "      --scale-aspect-fill-y         set scaling to stretch to fill on\n"
+				       "                                      y axis and to maintain aspect ratio\n"
+				       "      --scale-none                  disable scaling and use touchpad\n"
+				       "                                      values directly\n"
+				       "  -c, --click-threshold=INTEGER     set pressure threshold to trigger a\n"
+				       "                                      mouse down event\n"
+				       "  -r, --release-threshold=INTEGER   set pressure threshold to end a mouse\n"
+				       "                                      down event\n"
+				       "  -m, --movement-threshold=INTEGER  set pressure threshold to allow\n"
+				       "                                      movement of cursor\n"
+				       "  -w, --window=WINDOWID             window id to bind to. defaults to\n"
+				       "                                      root window\n"
+				       "  -h, --help                        display this help and exit\n"
+				       "\n"
+				       "Source: <https://github.com/annoyatron255/touchpad-tablet>\n");
+				return 0;
 			case '?':
 				// Error message printed by getopts_long
 				return 1;
