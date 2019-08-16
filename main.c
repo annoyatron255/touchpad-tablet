@@ -145,7 +145,7 @@ int main (int argc, char **argv) {
 				break;
 			case 'h':
 				printf("Usage: touchpad-tablet [OPTION] [DEVICE]\n"
-				       "Use touchpad as psuedo-tablet on a window.\n"
+				       "Use touchpad DEVICE as a psuedo-tablet on a X window.\n"
 				       "\n"
 				       "Mandatory arguments to long options are mandatory for short options too.\n"
 				       "      --debug                       print debugging messages\n"
@@ -167,6 +167,8 @@ int main (int argc, char **argv) {
 				       "                                      root window\n"
 				       "  -h, --help                        display this help and exit\n"
 				       "\n"
+				       "DEVICE must be readable by process. Generally, this means the user\n"
+				       "must be a member of the input group.\n"
 				       "Source: <https://github.com/annoyatron255/touchpad-tablet>\n");
 				return 0;
 			case '?':
