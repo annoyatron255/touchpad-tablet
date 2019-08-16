@@ -222,13 +222,12 @@ int main (int argc, char **argv) {
 		printf("DEBUG: ABS_PRESSURE min: %d max: %d\n", pressure->minimum, pressure->maximum);
 	}
 
-	if (click_threshold < pressure->minimum ||
-	    click_threshold > pressure->maximum ||
-	    release_threshold < pressure->minimum ||
-	    release_threshold > pressure->maximum) {
-		fprintf(stderr, "ERROR: Threshold(s) out of range\n");
-		return 1;
-	}
+	if (click_threshold < pressure->minimum || click_threshold > pressure->maximum)
+		fprintf(stderr, "WARNING: click threshold out of range\n");
+	if (release_threshold < pressure->minimum || release_threshold > pressure->maximum)
+		fprintf(stderr, "WARNING: release threshold out of range\n");
+	if (movement_threshold < pressure->minimum || movement_threshold > pressure->maximum)
+		fprintf(stderr, "WARNING: movement threshold out of range\n");
 
 	if (click_threshold < release_threshold)
 		fprintf(stderr, "WARNING: click threshold less than release threshold\n");
