@@ -39,6 +39,10 @@ int handle_event(Display *dpy, Window target_window, const struct input_event *e
 	XWindowAttributes target_attr;
 
 	if (ev->type == EV_SYN) {
+		if (debug_output)
+			printf("DEBUG: abs_x: %d abs_y: %d abs_pressure: %d\n",
+			       abs_x, abs_y, abs_pressure);
+
 		if (abs_pressure >= movement_threshold) {
 			if (XGetWindowAttributes(dpy, target_window, &target_attr) == 0) {
 				fprintf(stderr, "ERROR: Failed to get window attributes\n");
@@ -74,6 +78,7 @@ int handle_event(Display *dpy, Window target_window, const struct input_event *e
 			}
 
 			XWarpPointer(dpy, None, target_window, 0, 0, 0, 0, x, y);
+			XSync(dpy, 0);
 		}
 
 		if (abs_pressure >= click_threshold)
@@ -81,7 +86,7 @@ int handle_event(Display *dpy, Window target_window, const struct input_event *e
 		else if (abs_pressure <= release_threshold)
 			XTestFakeButtonEvent(dpy, 1, false, 0);
 
-		XFlush(dpy);
+		XSync(dpy, 0);
 	} else if (ev->type != EV_ABS)
 		return 0;
 
