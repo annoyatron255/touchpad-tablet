@@ -18,25 +18,59 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/XTest.h>
 
+enum scaling_mode {
+	FULL,
+	ASPECT_FILL_X,
+	ASPECT_FILL_Y,
+	NONE
+};
+
 int debug_output = false;
 
 int handle_event(Display *dpy, Window target_window, const struct input_event *ev,
-	         int click_threshold, int release_threshold, int movement_threshold) {
+	         const struct input_absinfo *x_absinfo,
+	         const struct input_absinfo *y_absinfo,
+	         const struct input_absinfo *pressure_absinfo,
+	         int click_threshold, int release_threshold, int movement_threshold,
+		 int scaling_mode) {
 	static int abs_x;
 	static int abs_y;
 	static int abs_pressure;
 	XWindowAttributes target_attr;
 
 	if (ev->type == EV_SYN) {
-		if (XGetWindowAttributes(dpy, target_window, &target_attr) == 0) {
-			fprintf(stderr, "ERROR: Failed to get window attributes\n");
-			exit(1);
-		}
-		if (debug_output)
-			printf("DEBUG: target_window width: %d height: %d\n", target_attr.width, target_attr.height);
+		if (abs_pressure >= movement_threshold) {
+			if (XGetWindowAttributes(dpy, target_window, &target_attr) == 0) {
+				fprintf(stderr, "ERROR: Failed to get window attributes\n");
+				exit(1);
+			}
+			if (debug_output)
+				printf("DEBUG: target_window width: %d height: %d\n",
+				       target_attr.width, target_attr.height);
 
-		if (abs_pressure >= movement_threshold)
-			XWarpPointer(dpy, None, target_window, 0, 0, 0, 0, abs_x, abs_y);
+			int x, y;
+
+			switch (scaling_mode) {
+				case FULL:
+					x = abs_x * target_attr.width / x_absinfo->maximum;
+					y = abs_y * target_attr.height / y_absinfo->maximum;
+					break;
+				case ASPECT_FILL_X:
+					x = abs_x * target_attr.width / x_absinfo->maximum;
+					y = abs_y * target_attr.width / x_absinfo->maximum;
+					break;
+				case ASPECT_FILL_Y:
+					x = abs_x * target_attr.height / y_absinfo->maximum;
+					y = abs_y * target_attr.height / y_absinfo->maximum;
+					break;
+				case NONE:
+					x = abs_x;
+					y = abs_y;
+					break;
+			}
+
+			XWarpPointer(dpy, None, target_window, 0, 0, 0, 0, x, y);
+		}
 
 		if (abs_pressure >= click_threshold)
 			XTestFakeButtonEvent(dpy, 1, true, 0);
@@ -66,11 +100,16 @@ int main (int argc, char **argv) {
 	int click_threshold = 50;
 	int release_threshold = 20;
 	int movement_threshold = 0;
+	static int scaling_mode = FULL;
 	Window target_window = 0;
 
 	while (1) {
 		static struct option long_options[] = {
 			{"debug", no_argument, &debug_output, 1},
+			{"scale-full", no_argument, &scaling_mode, FULL},
+			{"scale-aspect-fill-x", no_argument, &scaling_mode, ASPECT_FILL_X},
+			{"scale-aspect-fill-y", no_argument, &scaling_mode, ASPECT_FILL_Y},
+			{"scale-none", no_argument, &scaling_mode, NONE},
 			{"click-threshold", required_argument, 0, 'c'},
 			{"release-threshold", required_argument, 0, 'r'},
 			{"movement=threshold", required_argument, 0, 'm'},
@@ -175,10 +214,10 @@ int main (int argc, char **argv) {
 
 	do {
 		struct input_event ev;
-		rc = libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
+		rc = libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL|LIBEVDEV_READ_FLAG_BLOCKING, &ev);
 		if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
-			handle_event(dpy, target_window, &ev, click_threshold,
-			             release_threshold, movement_threshold);
+			handle_event(dpy, target_window, &ev, x, y, pressure, click_threshold,
+			             release_threshold, movement_threshold, scaling_mode);
 		}
 	} while (rc == 1 || rc == 0 || rc == -EAGAIN);
 }
