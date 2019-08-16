@@ -112,7 +112,7 @@ int main (int argc, char **argv) {
 			{"scale-none", no_argument, &scaling_mode, NONE},
 			{"click-threshold", required_argument, 0, 'c'},
 			{"release-threshold", required_argument, 0, 'r'},
-			{"movement=threshold", required_argument, 0, 'm'},
+			{"movement-threshold", required_argument, 0, 'm'},
 			{"window", required_argument, 0, 'w'},
 			{0, 0, 0, 0}
 		};
